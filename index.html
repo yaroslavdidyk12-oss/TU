@@ -32,7 +32,7 @@ background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center
 <body>
 <div class="board">
 
-<h2>🏙 Місто гравця</h2>
+<h2>🏙 Тактичний урбаніст</h2>
 
 <div class="players">
 <button class="blue" onclick="setPlayers(1)">1</button>
@@ -55,6 +55,15 @@ background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center
 <div class="row">
 <span>🛡 Оборона: <b id="defense"></b></span>
 <button onclick="build('defense',4)">+1</button>
+</div>
+
+<!-- Кнопки для симуляції сусіда -->
+<div class="row"><span>Симуляція дій сусіда:</span></div>
+<div class="row">
+  <button class="orange full" onclick="neighborSpy()">🕵️ Сусід використовує Шпигун</button>
+</div>
+<div class="row">
+  <button class="orange full" onclick="neighborAdmiral()">⚓ Сусід використовує Адмірала</button>
 </div>
 
 <button class="full green" onclick="drawCard()">🎲 Карта події</button>
@@ -117,6 +126,7 @@ function drawFromDeck(){
 
 function resetGame(){
  energy=1; industry=0; army=0; defense=0; phase=0;
+ buildDeck(); // перемішування карт
  update();
 }
 
@@ -172,18 +182,24 @@ function drawCard(){
  }
  else if(type==="disaster"){
    if(industry>0) industry--;
-   showModal("🌪 Стихійне лихо\nВтрачено 1 промисловість.","info");
+   showModal("🌪 Стихійне лихо\nВтрачено 1 одиницю промисловості.","info");
  }
  else if(type==="crisis"){
    energy=0;
    showModal("📉 Економічна криза\nВтрачено всю енергію.","info");
  }
  else if(type==="sabotage"){
-   if(defense>0) defense--;
-   else if(industry>0) industry--;
-   showModal("💣 Диверсія\nВтрати в місті.","info");
+   if(defense>0){
+     defense--;
+     showModal("💣 Диверсія\nВтрачено 1 одиницю оборони.","info");
+   } else {
+     let lost = Math.min(2, industry);
+     if(lost >= industry && energy===0 && industry-lost===0) lost = industry-1;
+     if(lost<0) lost=0;
+     industry -= lost;
+     showModal(`💣 Диверсія\nВтрачено ${lost} одиниці(и) промисловості.`,"info");
+   }
  }
-
  update();
 }
 
@@ -201,6 +217,45 @@ function nextMinute(){
  energy+=industry;
  phase=0;
  update();
+}
+
+// Симуляція дій сусіда
+function neighborSpy(){
+  if(defense>0){
+    defense--;
+    showModal("🕵️ Сусід використав Шпигуна\nВтрата 1 одиниці оборони","info");
+  } else if(industry>0){
+    let lost;
+    if(energy>0){
+      lost = Math.min(2, industry);
+    } else {
+      lost = industry>1 ? Math.min(2, industry-1) : 0; // залишаємо хоча б 1 промисловість
+    }
+    industry -= lost;
+    showModal(`🕵️ Сусід використав Шпигуна\nВтрачено ${lost} одиниці(и) промисловості`,"info");
+  } else {
+    showModal("🕵️ Сусід використав Шпигуна\nВтрат немає","info");
+  }
+  update();
+}
+
+function neighborAdmiral(){
+  if(army>0){
+    army--;
+    showModal("⚓ Сусід використав Адмірала\nВтрата 1 одиниці війська","info");
+  } else if(industry>0){
+    let lost;
+    if(energy>0){
+      lost = Math.min(2, industry);
+    } else {
+      lost = industry>1 ? Math.min(2, industry-1) : 0; // залишаємо хоча б 1 промисловість
+    }
+    industry -= lost;
+    showModal(`⚓ Сусід використав Адмірала\nВтрачено ${lost} одиниці(и) промисловості`,"info");
+  } else {
+    showModal("⚓ Сусід використав Адмірала\nВтрат немає","info");
+  }
+  update();
 }
 
 if("serviceWorker" in navigator){
