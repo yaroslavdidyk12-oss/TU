@@ -1,21 +1,21 @@
-const CACHE_NAME = 'miasto-cache-v1';
+const CACHE_NAME = "urbanist-v1";
 const urlsToCache = [
-  './',
-  './index.html',
-  './index-pl.html',
-  './manifest.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png'
+  "index.html",
+  "manifest.json"
 ];
 
-self.addEventListener('install', (event) => {
+self.addEventListener("install", event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
   );
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", event => {
   event.respondWith(
-    caches.match(event.request).then(resp => resp || fetch(event.request))
+    caches.match(event.request)
+      .then(response => {
+        return response || fetch(event.request);
+      })
   );
 });
