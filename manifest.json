@@ -1,18 +1,19 @@
 {
-  "name": "Miasto - gra planszowa",
-  "short_name": "Miasto",
-  "start_url": "./index.html",
+  "name": "Тактичний урбаніст",
+  "short_name": "Урбаніст",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#1b1b1b",
-  "theme_color": "#2e5b8b",
+  "theme_color": "#1b1b1b",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
