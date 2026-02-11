@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="uk">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Miasto — gra planszowa</title>
+<title>Місто — настільна гра</title>
 <link rel="manifest" href="manifest.json">
 <style>
 body{margin:0;font-family:Arial;background:#1b1b1b;color:#fff}
@@ -32,7 +32,7 @@ background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center
 <body>
 <div class="board">
 
-<h2>🏙 Taktyczny Urbanista</h2>
+<h2>🏙 Тактичний урбаніст</h2>
 
 <div class="players">
 <button class="blue" onclick="setPlayers(1)">1</button>
@@ -41,41 +41,43 @@ background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center
 <button class="blue" onclick="setPlayers(6)">6</button>
 </div>
 
-<div class="energy">🔋 Energia: <span id="energy"></span></div>
+<div class="energy">🔋 Енергія: <span id="energy"></span></div>
 <div class="phase" id="phaseText"></div>
 
 <div class="row">
-<span>🏭 Przemysł: <b id="industry"></b></span>
+<span>🏭 Промисловість: <b id="industry"></b></span>
 <button onclick="build('industry',1)">+1</button>
 </div>
 <div class="row">
-<span>⚔️ Wojsko: <b id="army"></b></span>
+<span>⚔️ Військо: <b id="army"></b></span>
 <button onclick="build('army',5)">+1</button>
 </div>
 <div class="row">
-<span>🛡 Obrona: <b id="defense"></b></span>
+<span>🛡 Оборона: <b id="defense"></b></span>
 <button onclick="build('defense',4)">+1</button>
 </div>
 
-<div class="row"><span>Symulacja działań sąsiada:</span></div>
+<!-- Кнопки для симуляції сусіда -->
+<div class="row"><span>Симуляція дій сусіда:</span></div>
 <div class="row">
-  <button class="orange full" onclick="neighborSpy()">🕵️ Sąsiad używa Szpiega</button>
+  <button class="orange full" onclick="neighborSpy()">🕵️ Сусід використовує Шпигун</button>
 </div>
 <div class="row">
-  <button class="orange full" onclick="neighborAdmiral()">⚓ Sąsiad używa Admirała</button>
+  <button class="orange full" onclick="neighborAdmiral()">⚓ Сусід використовує Адмірала</button>
 </div>
 
-<button class="full green" onclick="drawCard()">🎲 Karta zdarzenia</button>
-<button class="full red" onclick="nextMinute()">⏱ Następna minuta</button>
-<button class="full orange" onclick="resetGame()">🔁 Rozpocznij od nowa</button>
+<button class="full green" onclick="drawCard()">🎲 Карта події</button>
+<button class="full red" onclick="nextMinute()">⏱ Наступна хвилина</button>
+<button class="full orange" onclick="resetGame()">🔁 Почати з початку</button>
 
 </div>
 
+<!-- MODAL -->
 <div class="modal" id="modal">
   <div class="modalBox">
     <p id="modalText"></p>
-    <button class="green full" id="yesBtn" onclick="modalYes()">TAK</button>
-    <button class="red full" id="noBtn" onclick="modalNo()">NIE</button>
+    <button class="green full" id="yesBtn" onclick="modalYes()">ТАК</button>
+    <button class="red full" id="noBtn" onclick="modalNo()">НІ</button>
     <button class="full" id="okBtn" onclick="modalOk()">OK</button>
   </div>
 </div>
@@ -102,6 +104,7 @@ function buildDeck(){
  else config={spy:6,admiral:5,disaster:4,crisis:2,sabotage:3};
 
  for(let k in config) for(let i=0;i<config[k];i++) deck.push(k);
+
  shuffle(deck);
 }
 
@@ -123,27 +126,30 @@ function drawFromDeck(){
 
 function resetGame(){
  energy=1; industry=0; army=0; defense=0; phase=0;
- buildDeck();
+ buildDeck(); // перемішування карт
  update();
 }
 
 function update(){
  if(energy>8) energy=8;
  if(energy===0 && industry===0) energy=1;
+
  document.getElementById("energy").innerText=energy;
  document.getElementById("industry").innerText=industry;
  document.getElementById("army").innerText=army;
  document.getElementById("defense").innerText=defense;
  document.getElementById("phaseText").innerText=
-  phase===0?"Faza: 🃏 Karta zdarzenia":"Faza: 🏗 Budowa";
+  phase===0?"Фаза: 🃏 Карта події":"Фаза: 🏗 Будівництво";
 }
 
 function showModal(text,mode,yesAction){
  document.getElementById("modalText").innerText=text;
  pendingAction=yesAction;
+
  document.getElementById("yesBtn").style.display=mode==="choice"?"block":"none";
  document.getElementById("noBtn").style.display=mode==="choice"?"block":"none";
  document.getElementById("okBtn").style.display=mode==="info"?"block":"none";
+
  document.getElementById("modal").style.display="flex";
 }
 
@@ -162,36 +168,36 @@ function drawCard(){
  if(phase!==0) return;
  const type = drawFromDeck();
  if(!type){
-   showModal("🛑 Wszystkie karty wykorzystane.","info");
+   showModal("🛑 Всі карти витрачені. Кінець колоди.","info");
    return;
  }
 
  if(type==="spy"){
-   showModal("🕵️ Szpieg\nZapłacić 2 energii?", "choice",
+   showModal("🕵️ Шпигун\nЗаплатити 2 енергії?", "choice",
      ()=>{ if(energy>=2) energy-=2; });
  }
  else if(type==="admiral"){
-   showModal("⚓ Admirał\nZapłacić 6 energii?", "choice",
+   showModal("⚓ Адмірал\nЗаплатити 6 енергії?", "choice",
      ()=>{ if(energy>=6) energy-=6; });
  }
  else if(type==="disaster"){
    if(industry>0) industry--;
-   showModal("🌪 Katastrofa naturalna\nUtracono 1 jednostkę przemysłu.","info");
+   showModal("🌪 Стихійне лихо\nВтрачено 1 одиницю промисловості.","info");
  }
  else if(type==="crisis"){
    energy=0;
-   showModal("📉 Kryzys ekonomiczny\nUtracono całą energię.","info");
+   showModal("📉 Економічна криза\nВтрачено всю енергію.","info");
  }
  else if(type==="sabotage"){
    if(defense>0){
      defense--;
-     showModal("💣 Sabotaż\nUtracono 1 jednostkę obrony.","info");
+     showModal("💣 Диверсія\nВтрачено 1 одиницю оборони.","info");
    } else {
      let lost = Math.min(2, industry);
      if(lost >= industry && energy===0 && industry-lost===0) lost = industry-1;
      if(lost<0) lost=0;
      industry -= lost;
-     showModal(`💣 Sabotaż\nUtracono ${lost} jednostki przemysłu.`,"info");
+     showModal(`💣 Диверсія\nВтрачено ${lost} одиниці(и) промисловості.`,"info");
    }
  }
  update();
@@ -213,31 +219,26 @@ function nextMinute(){
  update();
 }
 
-// Symulacja działań sąsiada
+// Симуляція дій сусіда
 function neighborSpy(){
-  if(defense>0){
-    defense--;
-    showModal("🕵️ Sąsiad użył Szpiega\nUtracono 1 jednostkę obrony","info");
-  } else if(industry>1 || energy>0){
-    let lost = (energy>0)? industry : Math.min(2,industry);
-    industry -= lost;
-    showModal(`🕵️ Sąsiad użył Szpiega\nUtracono ${lost} jednostki przemysłu`,"info");
+  if(industry > 0){
+    industry--;
+    showModal("🕵️ Сусід використав Шпигуна\nВтрата 1 промисловості","info");
   } else {
-    showModal("🕵️ Sąsiad użył Szpiega\nNie ma strat","info");
+    showModal("🕵️ Сусід використав Шпигуна\nПромисловості немає, втрат немає","info");
   }
   update();
 }
 
 function neighborAdmiral(){
-  if(army>0){
+  if(army > 0){
     army--;
-    showModal("⚓ Sąsiad użył Admirała\nUtracono 1 jednostkę wojska","info");
-  } else if(industry>1 || energy>0){
-    let lost = (energy>0)? industry : Math.min(2,industry);
-    industry -= lost;
-    showModal(`⚓ Sąsiad użył Admirała\nUtracono ${lost} jednostki przemysłu`,"info");
+    showModal("⚓ Сусід використав Адмірала\nВтрата 1 одиниці війська","info");
+  } else if(industry>0){
+    industry--;
+    showModal("⚓ Сусід використав Адмірала\nВійсько відсутнє, втрачено 1 промисловість","info");
   } else {
-    showModal("⚓ Sąsiad użył Admirała\nNie ma strat","info");
+    showModal("⚓ Сусід використав Адмірала\nНемає військ і промисловості, втрат немає","info");
   }
   update();
 }
