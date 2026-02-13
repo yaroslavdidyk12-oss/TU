@@ -1,206 +1,192 @@
 <!DOCTYPE html>
 <html lang="uk">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1b1b1b">
+<link rel="apple-touch-icon" href="icon-192.png">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Місто — настільна гра</title>
-<link rel="manifest" href="manifest.json">
+<title>Тактичний урбаніст</title>
 <style>
 body{margin:0;font-family:Arial;background:#1b1b1b;color:#fff}
 .board{max-width:420px;margin:auto;padding:15px}
 h2{text-align:center;margin-bottom:10px}
-.energy{background:#111;padding:12px;text-align:center;font-size:20px;border-radius:8px;margin-bottom:10px}
-.phase{text-align:center;margin-bottom:10px;font-weight:bold}
-.row{display:flex;justify-content:space-between;align-items:center;background:#2d2d2d;padding:10px;border-radius:6px;margin-bottom:8px}
-button{border:none;border-radius:6px;padding:10px;font-size:15px;color:#fff;background:#555}
+.row{display:flex;justify-content:space-between;align-items:center;background:#2d2d2d;padding:8px;border-radius:6px;margin-bottom:6px}
+button{border:none;border-radius:6px;padding:8px;color:#fff;background:#555}
 button:disabled{opacity:.4}
-.full{width:100%;margin-bottom:6px}
+.full{width:100%}
 .green{background:#2e8b57}
 .red{background:#8b2e2e}
 .orange{background:#b36b00}
 .blue{background:#2e5b8b}
-.players{display:flex;gap:6px;margin-bottom:10px}
-.players button{flex:1}
-
-/* modal */
-.modal{position:fixed;top:0;left:0;right:0;bottom:0;
-background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:1000}
-.modalBox{background:#2b2b2b;padding:20px;border-radius:10px;text-align:center;width:85%}
+select{background:#444;color:#fff;border:none;border-radius:6px;padding:4px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center}
+.modalBox{background:#2b2b2b;padding:16px;border-radius:10px;width:85%;text-align:center}
 </style>
 </head>
-
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
 <body>
 <div class="board">
-
 <h2>🏙 Тактичний урбаніст</h2>
 
-<div class="players">
-<button class="blue" onclick="setPlayers(1)">1</button>
-<button class="blue" onclick="setPlayers(2)">2</button>
-<button class="blue" onclick="setPlayers(4)">4</button>
-<button class="blue" onclick="setPlayers(6)">6</button>
+<div class="row">
+<span>Гравців</span>
+<select id="players" onchange="setupPlayers()">
+<option>1</option><option>2</option><option>3</option>
+<option>4</option><option>5</option><option>6</option>
+</select>
 </div>
 
-<div class="energy">🔋 Енергія: <span id="energy"></span></div>
-<div class="phase" id="phaseText"></div>
-
 <div class="row">
-<span>🏭 Промисловість: <b id="industry"></b></span>
-<button onclick="build('industry',1)">+1</button>
-</div>
-<div class="row">
-<span>⚔️ Військо: <b id="army"></b></span>
-<button onclick="build('army',5)">+1</button>
-</div>
-<div class="row">
-<span>🛡 Оборона: <b id="defense"></b></span>
-<button onclick="build('defense',4)">+1</button>
+<span>Я гравець №</span>
+<select id="you"></select>
 </div>
 
-<!-- Кнопки для симуляції сусіда -->
+<div class="row">🔋 Енергія: <b id="energy"></b></div>
+<div class="row">🏭 Промисловість: <b id="industry"></b></div>
+<div class="row">⚔️ Військо: <b id="army"></b></div>
+<div class="row">🛡 Оборона: <b id="defense"></b></div>
+<div class="row"><b id="phase"></b></div>
+
+<div class="row">
+<button class="blue full" onclick="build('industry',1)">Будувати 🏭  1⚡</button>
+<button class="red full" onclick="build('army',5)">Будувати ⚔️  5⚡</button>
+<button class="green full" onclick="build('defense',4)">Будувати 🛡 4⚡</button>
+</div>
+<div class="row">
+<button class="orange full" onclick="drawCard()">🎲 Карта події</button>
+</div>
+<div class="row">
+<button class="blue full" onclick="nextTurn()">⏭ Наступний хід</button>
+</div>
 <div class="row"><span>Симуляція дій сусіда:</span></div>
 <div class="row">
-  <button class="orange full" onclick="neighborSpy()">🕵️ Сусід використовує Шпигун</button>
+<button class="orange full" onclick="neighborSpy()">🕵️ Сусід використовує Шпигун</button>
 </div>
 <div class="row">
-  <button class="orange full" onclick="neighborAdmiral()">⚓ Сусід використовує Адмірала</button>
+<button class="orange full" onclick="neighborAdmiral()">⚓ Сусід використовує Адмірала</button>
+</div>
+<div class="row">
+<button class="red full" onclick="resetGame()">🔁 Почати з початку</button>
 </div>
 
-<button class="full green" onclick="drawCard()">🎲 Карта події</button>
-<button class="full red" onclick="nextMinute()">⏱ Наступна хвилина</button>
-<button class="full orange" onclick="resetGame()">🔁 Почати з початку</button>
 
-</div>
-
-<!-- MODAL -->
 <div class="modal" id="modal">
-  <div class="modalBox">
-    <p id="modalText"></p>
-    <button class="green full" id="yesBtn" onclick="modalYes()">ТАК</button>
-    <button class="red full" id="noBtn" onclick="modalNo()">НІ</button>
-    <button class="full" id="okBtn" onclick="modalOk()">OK</button>
-  </div>
+<div class="modalBox">
+<p id="modalText"></p>
+<button class="green full" id="yesBtn" onclick="modalYes()">ТАК</button>
+<button class="red full" id="noBtn" onclick="modalNo()">НІ</button>
+<button class="full" id="okBtn" onclick="modalOk()">OK</button>
+</div>
 </div>
 
 <script>
 let energy,industry,army,defense,phase;
 let pendingAction=null;
 let deck=[],discard=[];
-let players=1;
+let players=1, you=1, turn=0;
 let cardsDrawn=0,maxCards=20;
 
-function setPlayers(n){
- players=n;
- buildDeck();
+function setupPlayers(){
+ players = parseInt(document.getElementById("players").value);
+ const youSel = document.getElementById("you");
+ youSel.innerHTML="";
+ for(let i=1;i<=players;i++){
+   const o=document.createElement("option");
+   o.value=i; o.text=i;
+   youSel.appendChild(o);
+ }
  resetGame();
 }
 
 function buildDeck(){
  deck=[]; discard=[]; cardsDrawn=0;
- let config;
- if(players===1) config={spy:3,admiral:2,disaster:5,crisis:4,sabotage:6};
- else if(players===2) config={spy:4,admiral:3,disaster:5,crisis:3,sabotage:5};
- else if(players===4) config={spy:5,admiral:4,disaster:4,crisis:3,sabotage:4};
- else config={spy:6,admiral:5,disaster:4,crisis:2,sabotage:3};
-
+ let config={spy:3, admiral:2, disaster:5, crisis:4, sabotage:6};
  for(let k in config) for(let i=0;i<config[k];i++) deck.push(k);
-
  shuffle(deck);
 }
 
-function shuffle(arr){
- for(let i=arr.length-1;i>0;i--){
-   const j=Math.floor(Math.random()*(i+1));
-   [arr[i],arr[j]]=[arr[j],arr[i]];
- }
-}
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}}
 
-function drawFromDeck(){
- if(cardsDrawn >= maxCards) return null;
- if(deck.length===0) return null;
- const card = deck.pop();
- discard.push(card);
- cardsDrawn++;
- return card;
-}
+function drawFromDeck(){if(cardsDrawn>=maxCards || deck.length===0) return null; const c=deck.pop(); discard.push(c); cardsDrawn++; return c;}
 
 function resetGame(){
- energy=1; industry=0; army=0; defense=0; phase=0;
- buildDeck(); // перемішування карт
- update();
+ you = parseInt(document.getElementById("you").value || 1);
+ energy=1; industry=0; army=0; defense=0; phase=0; turn=0;
+ buildDeck(); update();
 }
 
 function update(){
  if(energy>8) energy=8;
  if(energy===0 && industry===0) energy=1;
-
+ industry=Math.max(0,industry);
+ army=Math.max(0,army);
+ defense=Math.max(0,defense);
  document.getElementById("energy").innerText=energy;
  document.getElementById("industry").innerText=industry;
  document.getElementById("army").innerText=army;
  document.getElementById("defense").innerText=defense;
- document.getElementById("phaseText").innerText=
-  phase===0?"Фаза: 🃏 Карта події":"Фаза: 🏗 Будівництво";
+ document.getElementById("phase").innerText=phase===0?"Фаза: карта події":"Фаза завершена";
 }
 
-function showModal(text,mode,yesAction){
- document.getElementById("modalText").innerText=text;
- pendingAction=yesAction;
+function isYourTurn(){return players===1 || (turn%players)===(you-1);}
 
+function showModal(text,mode,action){
+ document.getElementById("modalText").innerText=text; pendingAction=action; 
  document.getElementById("yesBtn").style.display=mode==="choice"?"block":"none";
  document.getElementById("noBtn").style.display=mode==="choice"?"block":"none";
  document.getElementById("okBtn").style.display=mode==="info"?"block":"none";
-
  document.getElementById("modal").style.display="flex";
 }
 
-function modalYes(){ if(pendingAction) pendingAction(); closeModal(); }
-function modalNo(){ closeModal(); }
-function modalOk(){ closeModal(); }
-
-function closeModal(){
- pendingAction=null;
- document.getElementById("modal").style.display="none";
- phase=1;
- update();
-}
+function modalYes(){if(pendingAction)pendingAction(); closeModal();}
+function modalNo(){closeModal();}
+function modalOk(){closeModal();}
+function closeModal(){pendingAction=null; document.getElementById("modal").style.display="none"; phase=1; update();}
 
 function drawCard(){
  if(phase!==0) return;
- const type = drawFromDeck();
- if(!type){
-   showModal("🛑 Всі карти витрачені. Кінець колоди.","info");
-   return;
- }
 
- if(type==="spy"){
-   showModal("🕵️ Шпигун\nЗаплатити 2 енергії?", "choice",
-     ()=>{ if(energy>=2) energy-=2; });
- }
- else if(type==="admiral"){
-   showModal("⚓ Адмірал\nЗаплатити 6 енергії?", "choice",
-     ()=>{ if(energy>=6) energy-=6; });
- }
- else if(type==="disaster"){
-   if(industry>0) industry--;
-   showModal("🌪 Стихійне лихо\nВтрачено 1 одиницю промисловості.","info");
- }
- else if(type==="crisis"){
-   energy=0;
-   showModal("📉 Економічна криза\nВтрачено всю енергію.","info");
- }
- else if(type==="sabotage"){
-   if(defense>0){
-     defense--;
-     showModal("💣 Диверсія\nВтрачено 1 одиницю оборони.","info");
-   } else {
-     let lost = Math.min(2, industry);
-     if(lost >= industry && energy===0 && industry-lost===0) lost = industry-1;
-     if(lost<0) lost=0;
-     industry -= lost;
-     showModal(`💣 Диверсія\nВтрачено ${lost} одиниці(и) промисловості.`,"info");
-   }
- }
- update();
+ if(!isYourTurn()){showModal("Хід іншого гравця — карта на вас не діє","info"); phase=1; update(); return;}
+
+ const type = drawFromDeck();
+ if(!type){showModal("Всі карти витрачені","info"); return;}
+
+if(type==="spy"){
+   showModal("🕵️ Шпигун\nВикористати проти іншого гравця за 2 енергії?","choice",
+     ()=>{
+       if(energy>=2){
+           energy-=2;
+           showModal("🕵️ Шпигун використано проти сусіда","info");
+       } else {
+           showModal("Недостатньо енергії","info");
+       }
+   });
+
+} else if(type==="admiral"){
+
+   showModal("⚓ Адмірал\nВикористати проти іншого гравця за 6 енергії?","choice",
+     ()=>{
+       if(energy>=6){
+           energy-=6;
+           showModal("⚓ Адмірал використано проти сусіда","info");
+       } else {
+           showModal("Недостатньо енергії","info");
+       }
+   });
+
+ } else if(type==="disaster"){
+   if(industry>0) industry--; showModal("🌪 Стихійне лихо — втрачено 1 промисловість","info");
+ } else if(type==="crisis"){
+   energy=0; showModal("📉 Економічна криза — вся енергія втрачена","info");
+ } else if(type==="sabotage"){
+   if(defense>0){defense--; showModal("💣 Диверсія — втрачено 1 оборону","info");}
+   else{let lost=Math.min(2,industry); if(lost>=industry && energy===0 && industry-lost===0) lost=industry-1; if(lost<0) lost=0; industry-=lost; showModal(`💣 Диверсія — втрачено ${lost} промисловість`,"info");}}
+ phase=1; update();
 }
 
 function build(type,cost){
@@ -212,42 +198,28 @@ function build(type,cost){
  update();
 }
 
-function nextMinute(){
- if(phase!==1) return;
- energy+=industry;
- phase=0;
- update();
-}
+function nextTurn(){if(phase!==1) return; energy+=industry; if(energy>8) energy=8; turn++; phase=0; update();}
 
 // Симуляція дій сусіда
 function neighborSpy(){
-  if(industry > 0){
-    industry--;
-    showModal("🕵️ Сусід використав Шпигуна\nВтрата 1 промисловості","info");
-  } else {
-    showModal("🕵️ Сусід використав Шпигуна\nПромисловості немає, втрат немає","info");
-  }
-  update();
+ if(defense>0) defense--;
+ else{
+     if(energy>=1) industry = Math.max(0, industry-2);
+     else industry = Math.max(1, industry-2);
+ }
+ showModal("🕵️ Сусід використав Шпигун","info"); update();
 }
 
 function neighborAdmiral(){
-  if(army > 0){
-    army--;
-    showModal("⚓ Сусід використав Адмірала\nВтрата 1 одиниці війська","info");
-  } else if(industry>0){
-    industry--;
-    showModal("⚓ Сусід використав Адмірала\nВійсько відсутнє, втрачено 1 промисловість","info");
-  } else {
-    showModal("⚓ Сусід використав Адмірала\nНемає військ і промисловості, втрат немає","info");
-  }
-  update();
+ if(army>0) army--;
+ else{
+     if(energy>=1) industry = Math.max(0, industry-2);
+     else industry = Math.max(1, industry-2);
+ }
+ showModal("⚓ Сусід використав Адмірала","info"); update();
 }
 
-if("serviceWorker" in navigator){
- navigator.serviceWorker.register("sw.js");
-}
-
-setPlayers(1);
+setupPlayers();
 </script>
 </body>
 </html>
